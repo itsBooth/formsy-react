@@ -87,7 +87,7 @@ export default Component => {
     }
 
     // We have to make sure the validate method is kept when new props are added
-    componentWillReceiveProps(nextProps) {
+    componentDidReceiveProps(nextProps) {
       this.setValidations(nextProps.validations, nextProps.required);
     }
 
