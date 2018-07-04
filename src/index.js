@@ -323,6 +323,25 @@ class Formsy extends React.Component {
     });
   };
 
+  onValidationComplete = () => {
+    const allIsValid = this.inputs.every(component => component.state.isValid);
+
+    this.setState({
+      isValid: allIsValid
+    });
+
+    if (allIsValid) {
+      this.props.onValid();
+    } else {
+      this.props.onInvalid();
+    }
+
+    // Tell the form that it can start to trigger change events
+    this.setState({
+      canChange: true
+    });
+  };
+
   // Use the binded values and the actual input value to
   // validate the input and set its state. Then check the
   // state of the form itself
@@ -331,19 +350,23 @@ class Formsy extends React.Component {
     if (this.state.canChange) {
       this.props.onChange(this.getCurrentValues(), this.isChanged());
     }
+
     this.runValidation(component).then(validation => {
       if (!validation) return;
       // Run through the validations, split them up and call
       // the validator IF there is a value or it is required
-      component.setState({
-        isValid: validation.isValid,
-        isRequired: validation.isRequired,
-        validationError: validation.error,
-        externalError:
-          !validation.isValid && component.state.externalError
-            ? component.state.externalError
-            : null
-      });
+      component.setState(
+        {
+          isValid: validation.isValid,
+          isRequired: validation.isRequired,
+          validationError: validation.error,
+          externalError:
+            !validation.isValid && component.state.externalError
+              ? component.state.externalError
+              : null
+        },
+        this.onValidationComplete
+      );
     });
   };
 
@@ -391,7 +414,7 @@ class Formsy extends React.Component {
                 ? component.state.externalError
                 : null
           },
-          index === this.inputs.length - 1 ? onValidationComplete : null
+          index === this.inputs.length - 1 ? this.onValidationComplete : null
         );
       });
 
