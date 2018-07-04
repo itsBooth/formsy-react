@@ -4,29 +4,38 @@ import utils from './utils';
 
 /* eslint-disable react/default-props-match-prop-types */
 
-const convertValidationsToObject = (validations) => {
+const convertValidationsToObject = validations => {
   if (typeof validations === 'string') {
-    return validations.split(/,(?![^{[]*[}\]])/g).reduce((validationsAccumulator, validation) => {
-      let args = validation.split(':');
-      const validateMethod = args.shift();
+    return validations
+      .split(/,(?![^{[]*[}\]])/g)
+      .reduce((validationsAccumulator, validation) => {
+        let args = validation.split(':');
+        const validateMethod = args.shift();
 
-      args = args.map((arg) => {
-        try {
-          return JSON.parse(arg);
-        } catch (e) {
-          return arg; // It is a string if it can not parse it
+        args = args.map(arg => {
+          try {
+            return JSON.parse(arg);
+          } catch (e) {
+            return arg; // It is a string if it can not parse it
+          }
+        });
+
+        if (args.length > 1) {
+          throw new Error(
+            'Formsy does not support multiple args on string validations. Use object format of validations instead.'
+          );
         }
-      });
 
-      if (args.length > 1) {
-        throw new Error('Formsy does not support multiple args on string validations. Use object format of validations instead.');
-      }
-
-      // Avoid parameter reassignment
-      const validationsAccumulatorCopy = Object.assign({}, validationsAccumulator);
-      validationsAccumulatorCopy[validateMethod] = args.length ? args[0] : true;
-      return validationsAccumulatorCopy;
-    }, {});
+        // Avoid parameter reassignment
+        const validationsAccumulatorCopy = Object.assign(
+          {},
+          validationsAccumulator
+        );
+        validationsAccumulatorCopy[validateMethod] = args.length
+          ? args[0]
+          : true;
+        return validationsAccumulatorCopy;
+      }, {});
   }
 
   return validations || {};
@@ -38,20 +47,15 @@ const propTypes = {
   required: PropTypes.oneOfType([
     PropTypes.bool,
     PropTypes.object,
-    PropTypes.string,
+    PropTypes.string
   ]),
-  validations: PropTypes.oneOfType([
-    PropTypes.object,
-    PropTypes.string,
-  ]),
-  value: PropTypes.any, // eslint-disable-line react/forbid-prop-types
+  validations: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
+  value: PropTypes.any // eslint-disable-line react/forbid-prop-types
 };
 
-export {
-  propTypes,
-};
+export { propTypes };
 
-export default (Component) => {
+export default Component => {
   class WrappedComponent extends React.Component {
     constructor(props) {
       super(props);
@@ -63,7 +67,7 @@ export default (Component) => {
         pristineValue: props.value,
         validationError: [],
         externalError: null,
-        formSubmitted: false,
+        formSubmitted: false
       };
     }
 
@@ -95,8 +99,10 @@ export default (Component) => {
       }
 
       // If validations or required is changed, run a new validation
-      if (!utils.isSame(this.props.validations, prevProps.validations) ||
-        !utils.isSame(this.props.required, prevProps.required)) {
+      if (
+        !utils.isSame(this.props.validations, prevProps.validations) ||
+        !utils.isSame(this.props.required, prevProps.required)
+      ) {
         this.context.formsy.validate(this);
       }
     }
@@ -109,40 +115,45 @@ export default (Component) => {
     getErrorMessage = () => {
       const messages = this.getErrorMessages();
       return messages.length ? messages[0] : null;
-    }
+    };
 
     getErrorMessages = () => {
       if (!this.isValid() || this.showRequired()) {
         return this.state.externalError || this.state.validationError || [];
       }
       return [];
-    }
+    };
 
     getValue = () => this.state.value;
 
     setValidations = (validations, required) => {
       // Add validations to the store itself as the props object can not be modified
       this.validations = convertValidationsToObject(validations) || {};
-      this.requiredValidations = required === true ? { isDefaultRequiredValue: true } :
-        convertValidationsToObject(required);
-    }
+      this.requiredValidations =
+        required === true
+          ? { isDefaultRequiredValue: true }
+          : convertValidationsToObject(required);
+    };
 
     // By default, we validate after the value has been set.
     // A user can override this and pass a second parameter of `false` to skip validation.
     setValue = (value, validate = true) => {
       if (!validate) {
         this.setState({
-          value,
+          value
         });
       } else {
-        this.setState({
-          value,
-          isPristine: false,
-        }, () => {
-          this.context.formsy.validate(this);
-        });
+        this.setState(
+          {
+            value,
+            isPristine: false
+          },
+          () => {
+            this.context.formsy.validate(this);
+          }
+        );
       }
-    }
+    };
 
     hasValue = () => this.state.value !== '';
 
@@ -160,13 +171,16 @@ export default (Component) => {
       this.context.formsy.isValidValue.call(null, this, value);
 
     resetValue = () => {
-      this.setState({
-        value: this.state.pristineValue,
-        isPristine: true,
-      }, () => {
-        this.context.formsy.validate(this);
-      });
-    }
+      this.setState(
+        {
+          value: this.state.pristineValue,
+          isPristine: true
+        },
+        () => {
+          this.context.formsy.validate(this);
+        }
+      );
+    };
 
     showError = () => !this.showRequired() && !this.isValid();
 
@@ -190,7 +204,7 @@ export default (Component) => {
         setValue: this.setValue,
         showRequired: this.showRequired,
         showError: this.showError,
-        ...this.props,
+        ...this.props
       };
 
       if (innerRef) {
@@ -212,7 +226,7 @@ export default (Component) => {
   WrappedComponent.displayName = `Formsy(${getDisplayName(Component)})`;
 
   WrappedComponent.contextTypes = {
-    formsy: PropTypes.object, // What about required?
+    formsy: PropTypes.object // What about required?
   };
 
   WrappedComponent.defaultProps = {
@@ -221,7 +235,7 @@ export default (Component) => {
     validationError: '',
     validationErrors: {},
     validations: null,
-    value: Component.defaultValue,
+    value: Component.defaultValue
   };
 
   WrappedComponent.propTypes = propTypes;
