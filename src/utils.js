@@ -18,7 +18,7 @@ export default {
     if (Object.keys(a).length !== Object.keys(b).length) {
       isDifferent = true;
     } else {
-      Object.keys(a).forEach((key) => {
+      Object.keys(a).forEach(key => {
         if (!this.isSame(a[key], b[key])) {
           isDifferent = true;
         }
@@ -55,50 +55,62 @@ export default {
     const results = {
       errors: [],
       failed: [],
-      success: [],
+      success: []
     };
 
-    if (Object.keys(validations).length) {
-      Object.keys(validations).forEach((validationMethod) => {
-        if (validationRules[validationMethod] && typeof validations[validationMethod] === 'function') {
-          throw new Error(`Formsy does not allow you to override default validations: ${validationMethod}`);
+    return Promise.all(
+      Object.keys(validations).map(validationMethod => {
+        if (
+          validationRules[validationMethod] &&
+          typeof validations[validationMethod] === 'function'
+        ) {
+          throw new Error(
+            `Formsy does not allow you to override default validations: ${validationMethod}`
+          );
         }
 
-        if (!validationRules[validationMethod] && typeof validations[validationMethod] !== 'function') {
-          throw new Error(`Formsy does not have the validation rule: ${validationMethod}`);
+        if (
+          !validationRules[validationMethod] &&
+          typeof validations[validationMethod] !== 'function'
+        ) {
+          throw new Error(
+            `Formsy does not have the validation rule: ${validationMethod}`
+          );
         }
 
         if (typeof validations[validationMethod] === 'function') {
-          const validation = validations[validationMethod](currentValues, value);
-          if (typeof validation === 'string') {
-            results.errors.push(validation);
-            results.failed.push(validationMethod);
-          } else if (!validation) {
-            results.failed.push(validationMethod);
-          }
-          return;
+          return Promise.resolve(
+            validations[validationMethod](currentValues, value)
+          ).then(validation => {
+            if (typeof validation === 'string') {
+              results.errors.push(validation);
+              results.failed.push(validationMethod);
+            } else if (!validation) {
+              results.failed.push(validationMethod);
+            }
+            return;
+          });
         } else if (typeof validations[validationMethod] !== 'function') {
-          const validation = validationRules[validationMethod](
-            currentValues,
-            value,
-            validations[validationMethod],
-          );
-
-          if (typeof validation === 'string') {
-            results.errors.push(validation);
-            results.failed.push(validationMethod);
-          } else if (!validation) {
-            results.failed.push(validationMethod);
-          } else {
-            results.success.push(validationMethod);
-          }
-          return;
+          return Promise.resolve(
+            validationRules[validationMethod](
+              currentValues,
+              value,
+              validations[validationMethod]
+            )
+          ).then(validation => {
+            if (typeof validation === 'string') {
+              results.errors.push(validation);
+              results.failed.push(validationMethod);
+            } else if (!validation) {
+              results.failed.push(validationMethod);
+            } else {
+              results.success.push(validationMethod);
+            }
+            return;
+          });
         }
-
-        results.success.push(validationMethod);
-      });
-    }
-
-    return results;
-  },
+        return results.success.push(validationMethod);
+      })
+    ).then(() => results);
+  }
 };
