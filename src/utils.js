@@ -60,7 +60,6 @@ export default {
 
     return Promise.all(
       Object.keys(validations).map(validationMethod => {
-        console.log(validationMethod);
         if (
           validationRules[validationMethod] &&
           typeof validations[validationMethod] === 'function'
