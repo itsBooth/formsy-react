@@ -66,7 +66,6 @@ export default Component => {
         isPristine: true,
         pristineValue: props.value,
         validationError: [],
-        validateOnMount: false,
         externalError: null,
         formSubmitted: false
       };
