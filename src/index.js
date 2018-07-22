@@ -247,8 +247,7 @@ class Formsy extends React.Component {
     if (this.inputs.indexOf(component) === -1) {
       this.inputs.push(component);
     }
-
-    this.validate(component);
+    if (component.validateOnMount) this.validate(component);
   };
 
   // Method put on each input component to unregister
